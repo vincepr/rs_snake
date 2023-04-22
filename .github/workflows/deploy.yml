@@ -1,0 +1,85 @@
+name: Custom Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    brnches:
+      - master
+jobs:
+  build:
+    name: Build for Github Pages
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      
+      - name: Install
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        # TODO: try to make this faster with https://github.com/jetli/wasm-pack-action/blob/master/README.md
+
+      ## Experimental caching for faster rust compiles ->
+      - name: Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-cargo
+      - name: Cargo Target Cache
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-target-${{ hashFiles('Cargo.toml') }}
+            ${{ runner.os }}-cargo-target
+          # Speedup with caching:
+          # Run Test : 49s
+          # build website: 20s
+          # -> -> -> 
+          # Run Test: 11s
+          # build website: 6s
+
+      ## <- Experimental caching for faster rust compiles
+        
+      - name: Run Tests
+        run: cargo test
+      # # This will not run without wasm-bindgen-test as a dependence in Cargo.toml
+      # - name: Run wasm-pack tests against headless browser of choice
+      #   run: wasm-pack test --headless --chrome
+
+      - name: build website
+        run: wasm-pack build --target web --out-dir ./build/pkg --release
+
+        # current wasm-pack creates a gitignore in the out-dir (and no flag to turn that off):
+      - name: clean up gitignore from wasm-pack   
+        run: rm -f ./build/pkg/.gitignore
+
+        # store our files for the next step:
+      - name: Upload production-ready build files
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: ./build
+      
+  deploy:
+    name: Deploy to Github Pages
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: ./dist
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
