@@ -10,6 +10,6 @@ extern "C" {
     fn random() -> f64;
 }
 
-pub fn random_range(min: usize, max: usize) -> usize{
-    min +(random() * (max-min) as f64).floor() as usize
+pub fn random_range(min: usize, max: usize) -> usize {
+    min + (random() * (max - min) as f64).floor() as usize
 }

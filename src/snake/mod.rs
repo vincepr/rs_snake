@@ -1,13 +1,13 @@
 use std::collections::{HashSet, VecDeque};
 
 /*
-    Logic of the snake game itself (excluding timers/user-inputs)
- */
+   Logic of the snake game itself (excluding timers/user-inputs)
+*/
 
-/// Points on the Game-Grid. 
+/// Points on the Game-Grid.
 /// - (0,0) is not valid
 /// - width a game field of width:3 height:2 all valid points:
-///     - (1,1) (2,1) (3,1) 
+///     - (1,1) (2,1) (3,1)
 ///     - (1,2) (2,1) (3,2)
 pub type Point = (usize, usize);
 
@@ -22,10 +22,10 @@ pub enum Direction {
 #[derive(Debug)]
 pub struct Game {
     gameover: bool,
-    highscore : usize,
+    highscore: usize,
     width: usize,
     height: usize,
-    /// Queue of Points. Head is s[0], End is s[s.len-1] 
+    /// Queue of Points. Head is s[0], End is s[s.len-1]
     snake: VecDeque<Point>,
     direction: Direction,
     /// Hash Set of all Points that contain Food
@@ -34,7 +34,7 @@ pub struct Game {
 
 impl Game {
     pub fn new(width: usize, height: usize) -> Self {
-        let h:usize = height/2;   // starting height of snake
+        let h: usize = height / 2; // starting height of snake
         let mut food = HashSet::new();
         food.insert((5, h));
         food.insert((1, 1));
@@ -44,7 +44,7 @@ impl Game {
             highscore: 0,
             width,
             height,
-            snake: VecDeque::from([(3, h), (2,h), (1,h)]),
+            snake: VecDeque::from([(3, h), (2, h), (1, h)]),
             direction: Direction::Right,
             food: food,
         }
@@ -54,20 +54,20 @@ impl Game {
     pub fn direction_change(&mut self, dir: Direction) {
         match (&self.direction, dir) {
             // illegal moves:
-            (Direction::Up, Direction::Up) => {},
-            (Direction::Up, Direction::Down) => {},
-            (Direction::Down, Direction::Down) => {},
-            (Direction::Down, Direction::Up) => {},
-            (Direction::Right, Direction::Right) => {},
-            (Direction::Right, Direction::Left) => {},
-            (Direction::Left, Direction::Left) => {},
-            (Direction::Left, Direction::Right) => {},
+            (Direction::Up, Direction::Up) => {}
+            (Direction::Up, Direction::Down) => {}
+            (Direction::Down, Direction::Down) => {}
+            (Direction::Down, Direction::Up) => {}
+            (Direction::Right, Direction::Right) => {}
+            (Direction::Right, Direction::Left) => {}
+            (Direction::Left, Direction::Left) => {}
+            (Direction::Left, Direction::Right) => {}
             // legal move:
-            (_,dir) => self.direction = dir,
+            (_, dir) => self.direction = dir,
         }
     }
 
-    /// Game Loop 
+    /// Game Loop
     pub fn tick(&mut self) {
         if self.gameover {
             return;
@@ -75,10 +75,10 @@ impl Game {
         // movement according to direction value:
         let mut new_head = self.snake[0];
         match &self.direction {
-            Direction::Up   => new_head.1 +=1,
-            Direction::Down => new_head.1 = (new_head.1-1).min(0),  // to avoid underflowing uint we .min(0)
-            Direction::Right => new_head.0 +=1,
-            Direction::Left => new_head.0 = (new_head.0-1).min(0),
+            Direction::Up => new_head.1 += 1,
+            Direction::Down => new_head.1 = (new_head.1 - 1).min(0), // to avoid underflowing uint we .min(0)
+            Direction::Right => new_head.0 += 1,
+            Direction::Left => new_head.0 = (new_head.0 - 1).min(0),
         }
         // check for collision with wall or collision with snake itself
         if self.is_out_of_bounds(new_head) || self.snake.contains(&new_head) {
@@ -89,53 +89,50 @@ impl Game {
 
         // check if we are eating food (if yes then we dont pop_back -> get bigger)
         if self.food.contains(&new_head) {
-            let bonus = self.highscore/100;
-            self.highscore+=10+bonus;
+            let bonus = self.highscore / 100;
+            self.highscore += 10 + bonus;
             // delete the "eaten" food and generate a new one:
             self.food.remove(&new_head);
             // TODO generate new food
-        } else{
+        } else {
             self.snake.pop_back();
         }
-
     }
 
     // helper functions:
     // check if point out of bounds (for crashing into a wall etc.)
-    fn is_out_of_bounds(&self, (x,y):Point) -> bool {
-        x == 0 
-            || y == 0 
-            || x > self.width 
-            || y > self.height
+    fn is_out_of_bounds(&self, (x, y): Point) -> bool {
+        x == 0 || y == 0 || x > self.width || y > self.height
     }
 
     // get a randomized valid location for the next food item.
     // this will crash when the whole board is a giant snake+food but whatever
-    fn random_new_food(&self)-> Point{
+    fn random_new_food(&self) -> Point {
         use crate::random::random_range as rng;
         // first we just guess a few times (fast performance)
-        for _ in 0..30{
-            let r:Point = (rng(1,self.width), rng(1,self.height));
-            if !self.food.contains(&r) && !self.snake.contains(&r){
-                return r
+        for _ in 0..30 {
+            let r: Point = (rng(1, self.width), rng(1, self.height));
+            if !self.food.contains(&r) && !self.snake.contains(&r) {
+                return r;
             }
         }
         // once the board fills up with snake-body we do it the slow & proper-way (more mem allocation),
         // by getting all free positions and only rng-ing over those:
         let free_positions = (1..self.height)
-            .flat_map(|y| (1..self.width)
-            .map(move|x| (x,y))
-            .filter(|p| !self.snake.contains(&p) && !self.food.contains(&p) ))
+            .flat_map(|y| {
+                (1..self.width)
+                    .map(move |x| (x, y))
+                    .filter(|p| !self.snake.contains(&p) && !self.food.contains(&p))
+            })
             .collect::<Vec<Point>>();
-        if free_positions.is_empty(){
-            // TODO: make set game over in this case? 
+        if free_positions.is_empty() {
+            // TODO: make set game over in this case?
             panic!("END OF GAME REACHED- every position is full with snake (or food), not handling this properly for now")
         }
 
-        free_positions[rng(0,free_positions.len())]
+        free_positions[rng(0, free_positions.len())]
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -143,13 +140,11 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut g = Game::new(40,25);
+        let mut g = Game::new(40, 25);
         dbg!(&g);
         g.direction_change(Direction::Up);
         g.tick();
         dbg!(&g);
         dbg!(g.snake[0]);
-
-
     }
 }
