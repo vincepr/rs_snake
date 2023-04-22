@@ -1,4 +1,6 @@
-// importing/using the Math.random() from JS:
+/*
+    importing the Math.random() from JS:
+*/
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
