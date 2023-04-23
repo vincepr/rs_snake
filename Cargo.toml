@@ -18,4 +18,5 @@ version="0.3.61"
 features = [
     "Window", "Document", "Element", "HtmlElement", 
     "HtmlDivElement", "console", "CssStyleDeclaration",
+    "KeyboardEvent",
     ]
