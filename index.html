@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake-Game in Rust</title>
+    <style>
+        html {
+            font-size: 2rem;
+        }
+        #root{
+            text-align:center;
+            border: solid black 1px;
+        }
+        .pixel{
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <h6 id="points">Points: 0</h6>
+    
+    <script type="module">
+        import init from "./pkg/rs_snake.js"
+
+        // executing the wasm binary
+        async function main(){
+            await init();
+        }
+        main();
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "rs_snake",
+  "version": "0.1.0",
+  "files": [
+    "rs_snake_bg.wasm",
+    "rs_snake.js",
+    "rs_snake.d.ts"
+  ],
+  "module": "rs_snake.js",
+  "types": "rs_snake.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
