@@ -15,7 +15,7 @@ use web_sys::{console, window, HtmlDivElement, HtmlElement, KeyboardEvent};
 // this rust closure will get translated to a javascript closure so we can put it into the timeout below:
 // because of this closure we have to move the game in there -> we have to make the game reference counted (above)
 // then finally use RefCell and .borrow_mut() to get mutable access of the inner elements of game
-// - also we need to make this persist this so we made it static:
+// - also we need to make this persist this so we made it static (because rust lifetimes...)
 thread_local! {
     // static game struct
     static  GAME: Rc<RefCell<Game>> = Rc::new(RefCell::new(Game::new(15,10)));
@@ -81,13 +81,15 @@ pub fn main() {
     render();
 }
 
+
 /// using websys we render the current game state (we just redraw everything every tick)
 pub fn render() {
     let document = window().unwrap_throw().document().unwrap_throw();
-
-    // get values out of game state:
-    let height = GAME.with(|game| game.borrow().height);
-    let width = GAME.with(|game| game.borrow().width);
+    // make our static closure of game reachable with just game.
+    GAME.with(|game|{
+        // get values out of game state:
+    let height = game.borrow().height;
+    let width = game.borrow().width;
 
     // get the root div element:
     let root = document
@@ -119,7 +121,7 @@ pub fn render() {
                 .unwrap_throw();
 
             // set content of the point:
-            let typ = GAME.with(|game| game.borrow().get_typ(&point));
+            let typ = game.borrow().get_typ(&point);
             //let debug_info = typ.to_owned()+&format!("{:?}",point);
             el.set_inner_text(typ);
             el.set_class_name("pixel"); //so we can css it
@@ -135,14 +137,8 @@ pub fn render() {
         .unwrap_throw()
         .dyn_into::<HtmlElement>()
         .unwrap_throw();
-    let score_msg = GAME.with(|game| game.borrow().get_score());
+    let score_msg = game.borrow().get_score();
     root.set_inner_html(&score_msg);
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {}
+    });
 }
