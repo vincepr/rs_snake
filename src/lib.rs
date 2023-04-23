@@ -1,12 +1,12 @@
 mod random;
 mod snake;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use js_sys::Function;
 use snake::Game;
 use wasm_bindgen::prelude::*;
-use web_sys::{console, window, HtmlElement};
+use web_sys::{console, window, HtmlElement, HtmlDivElement};
 
 /*
    Frontend Part controlling the divs -> rendering those out etc.
@@ -17,7 +17,7 @@ use web_sys::{console, window, HtmlElement};
 // then finally use RefCell and .borrow_mut() to get mutable access of the inner elements of game
 // - also we need to make this persist this so we made it static:
 thread_local! {
-    static  GAME: Rc<RefCell<Game>> = Rc::new(RefCell::new(Game::new(30,20)));
+    static  GAME: Rc<RefCell<Game>> = Rc::new(RefCell::new(Game::new(15,10)));
 
     static TICK_CLOSURE: Closure<dyn FnMut()> = Closure::wrap(Box::new({
         let game = GAME.with(|game| game.clone());
@@ -43,30 +43,52 @@ pub fn main() {
                 500,
             )
             .unwrap_throw();
-    })
+    });
+
+    render();
 }
 
 /// using websis we render the current game state
 pub fn render() {
-    let root = window()
-        .unwrap_throw()
-        .document()
-        .unwrap_throw()
+    let document = window().unwrap_throw().document().unwrap_throw();
+
+    // get values out of game state:
+    let height = GAME.with(|game| game.borrow().height);
+    let width = GAME.with(|game| game.borrow().width);
+    
+
+    // get the root div element:
+    let root = document
         .get_element_by_id("root")
         .unwrap_throw()
         .dyn_into::<HtmlElement>()
         .unwrap_throw();
-    root.set_inner_html("Hello World");
+    root.set_inner_html("");
 
-    root.style().set_property("display", "grid").unwrap_throw();
+    // set Css:
+    root.style().set_property("display", "inline-grid").unwrap_throw();
     root.style().set_property("grid-template", &format!(
-            "repeat({}, auto) / repeat({}, auto)", 
-            GAME.with(
-                |game| game.height
-            ), GAME.with(|game| game.width)
-        ))
-        .unwrap_throw();
+            "repeat({}, auto) / repeat({}, auto)", height, width,
+        )).unwrap_throw();
 
+    // loop over the field and create divs:
+    for x in 1..(width+1){
+        for y in 1..(height+1) {
+            let point = (x,y);
+            let el = document
+                .create_element("div")
+                .unwrap_throw()
+                .dyn_into::<HtmlDivElement>()
+                .unwrap_throw();
+
+            // set content of the point:
+            let typ = GAME.with(|game| game.borrow().get_typ(&point));
+            el.set_inner_text(typ);
+
+            root.append_child(&el).unwrap_throw();
+
+        }
+    }
 }
 
 #[cfg(test)]

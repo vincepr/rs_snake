@@ -23,13 +23,13 @@ pub enum Direction {
 pub struct Game {
     gameover: bool,
     highscore: usize,
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
     /// Queue of Points. Head is s[0], End is s[s.len-1]
-    snake: VecDeque<Point>,
+    pub snake: VecDeque<Point>,
     direction: Direction,
     /// Hash Set of all Points that contain Food
-    food: HashSet<Point>,
+    pub food: HashSet<Point>,
 }
 
 impl Game {
@@ -54,16 +54,25 @@ impl Game {
     pub fn direction_change(&mut self, dir: Direction) {
         match (&self.direction, dir) {
             // illegal moves:
-            (Direction::Up, Direction::Up) => {}
+            (old, new) if *old==new => {},
             (Direction::Up, Direction::Down) => {}
-            (Direction::Down, Direction::Down) => {}
             (Direction::Down, Direction::Up) => {}
-            (Direction::Right, Direction::Right) => {}
             (Direction::Right, Direction::Left) => {}
-            (Direction::Left, Direction::Left) => {}
             (Direction::Left, Direction::Right) => {}
             // legal move:
             (_, dir) => self.direction = dir,
+        }
+    }
+
+    pub fn get_typ(&self, p: &Point) -> &'static str {
+        if self.food.contains(p) {
+            "🍓"
+        } else if self.snake[0] == *p {
+            "🐸"
+        } else if self.snake.contains(p){
+            "🟢"
+        } else {
+            "⬜"
         }
     }
 
